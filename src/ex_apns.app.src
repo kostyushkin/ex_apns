@@ -23,5 +23,6 @@
                   ssl
                  ]},
   {mod, {ex_apns_app, []}},
+  {modules, []},
   {env, []}
  ]}.
