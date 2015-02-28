@@ -117,15 +117,13 @@ handle_call(_Request, _From, State) ->
   {reply, ok, State}.
 
 %% @hidden
-handle_cast({send, Token, Payload}, State) ->
+handle_cast({send, Token, PayloadBin}, State) ->
   TokenInt = token_to_integer(Token),
-  PayloadBin = jsx:term_to_json(Payload),
   Packet = [<<0, 32:16, TokenInt:256,
             (iolist_size(PayloadBin)):16>> | PayloadBin],
   send(Packet, State);
-handle_cast({send, Token, Payload, Expiry}, State = #state{next = Id}) ->
+handle_cast({send, Token, PayloadBin, Expiry}, State = #state{next = Id}) ->
   TokenInt = token_to_integer(Token),
-  PayloadBin = jsx:term_to_json(Payload),
   Packet = [<<1, Id:32, Expiry:32, 32:16, TokenInt:256,
               (iolist_size(PayloadBin)):16>> | PayloadBin],
   send(Packet, State#state{next = Id + 1});
@@ -148,11 +146,12 @@ code_change(_OldVsn, State, _Extra) ->
 %% @spec connect(address(), integer(), string()) -> result()
 %%       where address() = string() | atom() | inet:ip_address()
 %%             result() = {ok, ssl:socket()} | {error, inet:posix()}
-connect(Address, Port, CertFile) ->
+connect(Address, Port, {CertFile, Password}) ->
   CaCertFile = filename:join([code:priv_dir(?MODULE), "entrust_2048_ca.cer"]),
   SslOptions = [binary,
                 {active, false},
                 {certfile, CertFile},
+                {password, Password},
                 {cacertfile, CaCertFile}],
   ssl:connect(Address, Port, SslOptions).
 
